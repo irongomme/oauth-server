@@ -94,7 +94,7 @@ class OAuthAuthenticate extends BaseAuthenticate
      */
     public function authenticate(Request $request, Response $response)
     {
-        return false;
+        return $this->getUser($request);
     }
 
     /**

@@ -32,8 +32,13 @@ class OAuthController extends AppController
      */
     public function beforeFilter(Event $event)
     {
-        if ($this->Auth) {
-            $this->Auth->allow(['oauth', 'authorize', 'accessToken']);
+        if (isset($this->Auth)) {
+            $this->Auth->allow(['accessToken']);
+        }
+
+        //Deactivate Csrf for accessToken posts requests
+        if (isset($this->Security)) {
+            $this->Security->config('unlockedActions', ['accessToken']);
         }
 
         parent::beforeFilter($event);
@@ -45,26 +50,7 @@ class OAuthController extends AppController
     public function oauth()
     {
         if ($this->OAuth->checkAuthParams('authorization_code')) {
-            if (!$this->Auth->user()) {
-                $query = $this->request->query;
-                $query['redir'] = 'oauth';
-
-                $this->redirect(
-                    [
-                        'plugin' => false,
-                        'controller' => 'Users',
-                        'action' => 'login',
-                        '?' => $query
-                    ]
-                );
-            } else {
-                $this->redirect(
-                    [
-                        'action' => 'authorize',
-                        '?' => $this->request->query
-                    ]
-                );
-            }
+            $this->redirect(['action' => 'authorize', '?' => $this->request->query]);
         }
     }
 
@@ -76,20 +62,6 @@ class OAuthController extends AppController
     {
         if (!$authParams = $this->OAuth->checkAuthParams('authorization_code')) {
             return;
-        }
-
-        if (!$this->Auth->user()) {
-            $query = $this->request->query;
-            $query['redir'] = 'oauth';
-
-            return $this->redirect(
-                [
-                    'plugin' => false,
-                    'controller' => 'Users',
-                    'action' => 'login',
-                    '?' => $query
-                ]
-            );
         }
 
         $event = new Event('OAuthServer.beforeAuthorize', $this);
